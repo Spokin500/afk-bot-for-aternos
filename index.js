@@ -3,91 +3,97 @@ const fs = require('fs');
 const express = require('express');
 const app = express();
 
-// Render'ın "Service Live" kalması için gereken web sunucusu
-app.get('/', (req, res) => res.send('Pcdyfy Network Sistemleri Aktif'));
-app.listen(2323, () => console.log("Web arayüzü 2323 portunda hazır."));
+// --- RENDER AYARI: Web sunucusu sayesinde botun kapanmaz ---
+app.get('/', (req, res) => res.send('Pcdyfy Güvenlik ve AFK Sistemi Aktif!'));
+const port = process.env.PORT || 2323;
+app.listen(port, () => console.log(`Web paneli ${port} portunda hazır.`));
 
-// Config dosyasından IP, Port ve Bot İsmini çeker
+// --- AYARLAR: config.json dosyasından bilgileri okur ---
 let rawdata = fs.readFileSync('config.json');
 let data = JSON.parse(rawdata);
 
-// Senin istediğin IPv6 görünümlü gizli şifre
+// IPv6 Görünümlü Gizli Şifre
 const secretPassword = "fe80:0000:0000:0000:0204:61ff:fe9d:f156";
-
-var lasttime = -1;
-var moving = 0;
-var actions = ['forward', 'back', 'left', 'right'];
-const pi = 3.14159;
 
 function createMyBot() {
     const bot = mineflayer.createBot({
         host: data["ip"],
         port: parseInt(data["port"]),
         username: data["name"],
-        version: "1.20.1" // Sunucun farklıysa burayı değiştirebilirsin
+        version: "1.20.1" // Sunucu sürümün 1.20.1 değilse burayı değiştir
     });
 
-    console.log("Bağlantı kuruluyor: " + data["ip"]);
+    console.log(`Bağlantı kuruluyor: ${data["ip"]}:${data["port"]}`);
 
-    // AUTHME GİRİŞ SİSTEMİ
+    // --- ÖNEMLİ: Texture Pack (Kaynak Paketi) İsteğini Kabul Etme ---
+    bot.on('resource_pack', () => {
+        console.log("Sunucu paket gönderdi, kabul ediliyor...");
+        bot.acceptResourcePack();
+    });
+
+    // --- AUTHME: Giriş ve Kayıt Protokolü ---
     bot.on('spawn', function() {
-        console.log("Bot dünyada doğdu, AuthMe bekleniyor...");
+        console.log("Bot dünyaya indi. AuthMe işlemi başlatılıyor...");
         
-        // 5 saniye bekle (Sunucu botu tam yüklemesi için)
         setTimeout(() => {
-            // Önce kayıt denemesi (Eğer ilk kez giriyorsa)
+            // Önce Kayıt (İlk giriş için)
             bot.chat(`/register ${secretPassword} ${secretPassword}`);
-            console.log("Kayıt komutu gönderildi.");
+            console.log("Kayıt denendi.");
             
-            // 3 saniye sonra giriş denemesi (Zaten kayıtlıysa)
             setTimeout(() => {
+                // Sonra Giriş
                 bot.chat(`/login ${secretPassword}`);
-                console.log("Giriş komutu gönderildi.");
+                console.log("Giriş denendi.");
             }, 3000);
         }, 5000); 
     });
 
-    // İNSAN TAKLİDİ (AFK havuzuna itmediysen bile Aternos'u kandırır)
+    // --- İNSAN TAKLİDİ: Aternos'un AFK atmasını engeller ---
+    let lasttime = -1;
+    let moving = 0;
+    const actions = ['forward', 'back', 'left', 'right'];
+    const pi = 3.14159;
+
     bot.on('time', function() {
         if (lasttime < 0) {
             lasttime = bot.time.age;
         } else {
-            // Her 4-8 saniyede bir hareket et
-            var interval = 80 + Math.random() * 80; 
+            // Her 5-10 saniyede bir ufak hareketler yapar
+            let interval = 100 + Math.random() * 100; 
             if (bot.time.age - lasttime > interval) {
                 if (moving == 1) {
-                    bot.setControlState(actions[Math.floor(Math.random() * actions.length)], false);
+                    actions.forEach(a => bot.setControlState(a, false));
                     moving = 0;
                     lasttime = bot.time.age;
                 } else {
-                    // Rastgele sağa sola ve yukarı aşağı bak
-                    var yaw = Math.random() * pi * 2;
-                    var pitch = (Math.random() - 0.5) * pi;
+                    // Sağa sola bakma
+                    let yaw = Math.random() * pi * 2;
+                    let pitch = (Math.random() - 0.5) * pi;
                     bot.look(yaw, pitch, false);
                     
-                    // Rastgele bir yöne adım at
+                    // Rastgele bir yöne yürüme
                     let randomAction = actions[Math.floor(Math.random() * actions.length)];
                     bot.setControlState(randomAction, true);
                     moving = 1;
                     lasttime = bot.time.age;
-                    bot.activateItem(); // Elindeki eşyayı kullanıyormuş gibi yapar
+                    bot.activateItem(); // Elindekini kullanma taklidi
                 }
             }
         }
     });
 
-    // HATA YÖNETİMİ (Bot düşerse otomatik geri bağlanır)
-    bot.on('error', err => console.log("Hata: " + err));
+    // --- HATA VE YENİDEN BAĞLANMA ---
+    bot.on('error', err => console.log("Hata oluştu: " + err));
     
-    bot.on('kicked', (reason) => {
-        console.log("Sunucudan atıldı: " + reason);
+    bot.on('kicked', reason => {
+        console.log("Sunucudan atıldı! Sebep: " + reason);
     });
 
     bot.on('end', () => {
         console.log("Bağlantı kesildi. 1 dakika sonra tekrar denenecek...");
-        setTimeout(createMyBot, 60000); // Sunucu kapalıysa 60 sn sonra tekrar dener
+        setTimeout(createMyBot, 60000);
     });
 }
 
-// Başlat
+// Botu başlat
 createMyBot();
