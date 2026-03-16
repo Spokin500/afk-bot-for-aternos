@@ -1,7 +1,7 @@
 {
   "name": "afkbot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Aternos AFK Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -9,8 +9,7 @@
   "author": "krushna06",
   "license": "ISC",
   "dependencies": {
-    "config": "^3.3.3",
-    "fs": "0.0.1-security",
-    "mineflayer": "^2.37.1"
+    "mineflayer": "^4.20.0",
+    "express": "^4.18.2"
   }
 }
