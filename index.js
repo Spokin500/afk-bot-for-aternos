@@ -1,99 +1,91 @@
-const mineflayer = require('mineflayer')
+const mineflayer = require('mineflayer');
 const fs = require('fs');
 const express = require('express');
 const app = express();
 
-// --- RENDER AYARI: Web sunucusu sayesinde botun kapanmaz ---
-app.get('/', (req, res) => res.send('Pcdyfy Güvenlik ve AFK Sistemi Aktif!'));
-const port = process.env.PORT || 2323;
-app.listen(port, () => console.log(`Web paneli ${port} portunda hazır.`));
+// --- 1. RENDER 7/24 AÇIK TUTMA SİSTEMİ ---
+const port = process.env.PORT || 10000;
+app.get('/', (req, res) => res.send('Pcdyfy AFK Sistemi Kusursuz Şekilde Çalışıyor!'));
+app.listen(port, () => console.log(`[SİSTEM] Web paneli ${port} portunda hazır.`));
 
-// --- AYARLAR: config.json dosyasından bilgileri okur ---
+// --- 2. AYARLARI ÇEKME ---
 let rawdata = fs.readFileSync('config.json');
 let data = JSON.parse(rawdata);
 
-// IPv6 Görünümlü Gizli Şifre
+// Senin özel IPv6 gizli şifren
 const secretPassword = "fe80:0000:0000:0000:0204:61ff:fe9d:f156";
 
-function createMyBot() {
+function createPerfectBot() {
     const bot = mineflayer.createBot({
         host: data["ip"],
         port: parseInt(data["port"]),
         username: data["name"],
-        version: "1.20.1" // Sunucu sürümün 1.20.1 değilse burayı değiştir
+        version: "1.21.1", // Loglarda gördüğümüz tam sürüm
+        hideErrors: true   // Gereksiz konsol kalabalığını gizler
     });
 
-    console.log(`Bağlantı kuruluyor: ${data["ip"]}:${data["port"]}`);
+    console.log(`[BAĞLANTI] Sunucuya giriliyor: ${data["ip"]}:${data["port"]}`);
 
-    // --- ÖNEMLİ: Texture Pack (Kaynak Paketi) İsteğini Kabul Etme ---
+    // --- 3. TEXTURE PACK KORUMASI ---
     bot.on('resource_pack', () => {
-        console.log("Sunucu paket gönderdi, kabul ediliyor...");
+        console.log("[KORUMA] Sunucu paket gönderdi, otomatik kabul edildi.");
         bot.acceptResourcePack();
     });
 
-    // --- AUTHME: Giriş ve Kayıt Protokolü ---
+    // --- 4. SÜPER HIZLI AUTHME (Zaman Aşımını Engeller) ---
     bot.on('spawn', function() {
-        console.log("Bot dünyaya indi. AuthMe işlemi başlatılıyor...");
+        console.log("[OYUN] Bot dünyaya indi! Şifre işlemleri başlıyor...");
         
+        // Timeout yememek için sadece 1 saniye bekleyip şifreyi yazıyoruz
         setTimeout(() => {
-            // Önce Kayıt (İlk giriş için)
             bot.chat(`/register ${secretPassword} ${secretPassword}`);
-            console.log("Kayıt denendi.");
             
+            // Register ve Login çakışmasın diye araya yarım saniye (500ms) koyduk
             setTimeout(() => {
-                // Sonra Giriş
                 bot.chat(`/login ${secretPassword}`);
-                console.log("Giriş denendi.");
-            }, 3000);
-        }, 5000); 
+                console.log("[AUTHME] Giriş komutları başarıyla gönderildi!");
+            }, 500);
+            
+        }, 1000); 
     });
 
-    // --- İNSAN TAKLİDİ: Aternos'un AFK atmasını engeller ---
-    let lasttime = -1;
-    let moving = 0;
-    const actions = ['forward', 'back', 'left', 'right'];
-    const pi = 3.14159;
+    // --- 5. ÖLÜM KORUMASI (Şimşek veya mob öldürürse) ---
+    bot.on('death', () => {
+        console.log("[UYARI] Bot öldü! Yeniden doğuyor...");
+        bot.chat('/respawn');
+    });
 
-    bot.on('time', function() {
-        if (lasttime < 0) {
-            lasttime = bot.time.age;
-        } else {
-            // Her 5-10 saniyede bir ufak hareketler yapar
-            let interval = 100 + Math.random() * 100; 
-            if (bot.time.age - lasttime > interval) {
-                if (moving == 1) {
-                    actions.forEach(a => bot.setControlState(a, false));
-                    moving = 0;
-                    lasttime = bot.time.age;
-                } else {
-                    // Sağa sola bakma
-                    let yaw = Math.random() * pi * 2;
-                    let pitch = (Math.random() - 0.5) * pi;
-                    bot.look(yaw, pitch, false);
-                    
-                    // Rastgele bir yöne yürüme
-                    let randomAction = actions[Math.floor(Math.random() * actions.length)];
-                    bot.setControlState(randomAction, true);
-                    moving = 1;
-                    lasttime = bot.time.age;
-                    bot.activateItem(); // Elindekini kullanma taklidi
-                }
-            }
+    // --- 6. KUSURSUZ İNSAN TAKLİDİ VE ANTİ-AFK ---
+    bot.on('time', () => {
+        // Sunucu zamanına göre düzenli ama rastgele hareketler
+        if (bot.time.age % 100 === 0) {
+            bot.setControlState('jump', true);
+            setTimeout(() => bot.setControlState('jump', false), 500);
+            
+            // Kafasını rastgele yönlere çevirir
+            const yaw = Math.random() * Math.PI * 2;
+            const pitch = (Math.random() - 0.5) * Math.PI;
+            bot.look(yaw, pitch, false);
         }
     });
 
-    // --- HATA VE YENİDEN BAĞLANMA ---
-    bot.on('error', err => console.log("Hata oluştu: " + err));
-    
+    // --- 7. HATA VE ATILMA YÖNETİMİ ---
     bot.on('kicked', reason => {
-        console.log("Sunucudan atıldı! Sebep: " + reason);
+        console.log("\n[HATA - SUNUCUDAN ATILDI]");
+        console.log("Sebep: " + reason);
+        console.log("--------------------------\n");
     });
 
+    bot.on('error', err => {
+        console.log("[SİSTEM HATASI] " + err.message);
+    });
+
+    // Bağlantı koparsa veya sunucu kapanırsa asla pes etmez, tekrar dener
     bot.on('end', () => {
-        console.log("Bağlantı kesildi. 1 dakika sonra tekrar denenecek...");
-        setTimeout(createMyBot, 60000);
+        console.log("[BAĞLANTI KOPTU] 15 saniye sonra sunucuya tekrar bağlanılacak...");
+        setTimeout(createPerfectBot, 15000); // 15 saniye bekleme
     });
 }
 
-// Botu başlat
-createMyBot();
+// Sistemi Başlat
+createPerfectBot();
