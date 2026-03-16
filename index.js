@@ -1,46 +1,44 @@
 const mineflayer = require('mineflayer')
 const fs = require('fs');
-const express = require('express'); // keep_alive yerine daha sağlam express kullandık
+const express = require('express');
 const app = express();
 
-// RENDER'IN KAPANMAMASI İÇİN WEB SUNUCUSU
-app.get('/', (req, res) => res.send('Sistem Aktif!'));
+app.get('/', (req, res) => res.send('Pcdyfy Network Güvenlik Sistemi Aktif'));
 app.listen(2323, () => console.log("Web arayüzü hazır."));
 
-// AYARLARI DOSYADAN OKU
 let rawdata = fs.readFileSync('config.json');
 let data = JSON.parse(rawdata);
+
+// IPv6 Görünümlü Gizli Şifre
+const secretPassword = "2001:0db8:85a3:0000:0000:8a2e:0370:7334";
+
+var bot = mineflayer.createBot({
+  host: data["ip"],
+  port: parseInt(data["port"]),
+  username: data["name"],
+  version: "1.20.1" 
+});
 
 var lasttime = -1;
 var moving = 0;
 var actions = ['forward', 'back', 'left', 'right']
-var lastaction;
 var pi = 3.14159;
-var moveinterval = 2; 
-var maxrandom = 5; 
 
-// BOTU OLUŞTUR (Port eklendi!)
-var bot = mineflayer.createBot({
-  host: data["ip"],
-  port: parseInt(data["port"]), // Port numarasını buradan okur
-  username: data["name"],
-  version: "1.20.1" // Sunucu sürümüne göre burayı değiştirebilirsin
-});
+console.log("Bağlantı kuruluyor: " + data["ip"]);
 
-console.log("Sunucuya bağlanılmaya çalışılıyor: " + data["ip"]);
-
-bot.on('login', function() {
-    console.log("Bot sunucuya giriş yaptı (Login)!");
-});
-
-// AUTHME GİRİŞİ VE HAREKET BAŞLATMA
 bot.on('spawn', function() {
-    console.log("Bot dünyada doğdu (Spawn)!");
+    console.log("Bot dünyada doğdu!");
     
-    // AuthMe şifreni buraya yaz (123456 kısmını değiştir)
+    // AuthMe Protokolü
     setTimeout(() => {
-        bot.chat('/login 123456'); 
-        console.log("Giriş komutu gönderildi.");
+        // Hem kayıt hem giriş komutunu arka arkaya gönderir
+        bot.chat(`/register ${secretPassword} ${secretPassword}`);
+        console.log("Kayıt denendi.");
+        
+        setTimeout(() => {
+            bot.chat(`/login ${secretPassword}`);
+            console.log("Giriş denendi.");
+        }, 1500);
     }, 2000);
 });
 
@@ -48,29 +46,25 @@ bot.on('time', function() {
     if (lasttime < 0) {
         lasttime = bot.time.age;
     } else {
-        var randomadd = Math.random() * maxrandom * 20;
-        var interval = moveinterval * 20 + randomadd;
+        var interval = 60 + Math.random() * 100; // Hareket sıklığı
         if (bot.time.age - lasttime > interval) {
             if (moving == 1) {
-                bot.setControlState(lastaction, false);
+                bot.setControlState(actions[Math.floor(Math.random() * actions.length)], false);
                 moving = 0;
                 lasttime = bot.time.age;
             } else {
-                var yaw = Math.random() * pi - (0.5 * pi);
-                var pitch = Math.random() * pi - (0.5 * pi);
+                var yaw = Math.random() * pi;
+                var pitch = (Math.random() - 0.5) * pi;
                 bot.look(yaw, pitch, false);
-                lastaction = actions[Math.floor(Math.random() * actions.length)];
-                bot.setControlState(lastaction, true);
+                bot.setControlState(actions[Math.floor(Math.random() * actions.length)], true);
                 moving = 1;
                 lasttime = bot.time.age;
-                bot.activateItem();
             }
         }
     }
 });
 
-// HATA OLURSA BOTUN KAPANMASINI ENGELLER
 bot.on('error', err => console.log("Hata: " + err));
-bot.on('kicked', reason => console.log("Sunucudan atıldı: " + reason));
-bot.on('end', () => console.log("Bağlantı kesildi."));
+bot.on('kicked', reason => console.log("Atıldı: " + reason));
+bot.on('end', () => console.log("Bağlantı bitti."));
 
