@@ -5,14 +5,14 @@ const app = express();
 
 // --- 1. RENDER 7/24 AÇIK TUTMA SİSTEMİ ---
 const port = process.env.PORT || 10000;
-app.get('/', (req, res) => res.send('Pcdyfy AFK Sistemi Kusursuz Şekilde Çalışıyor!'));
+app.get('/', (req, res) => res.send('Pcdyfy AFK Sistemi Kusursuz Çalışıyor!'));
 app.listen(port, () => console.log(`[SİSTEM] Web paneli ${port} portunda hazır.`));
 
 // --- 2. AYARLARI ÇEKME ---
 let rawdata = fs.readFileSync('config.json');
 let data = JSON.parse(rawdata);
 
-// Senin özel IPv6 gizli şifren
+// Gizli Şifre
 const secretPassword = "fe80:0000:0000:0000:0204:61ff:fe9d:f156";
 
 function createPerfectBot() {
@@ -20,70 +20,61 @@ function createPerfectBot() {
         host: data["ip"],
         port: parseInt(data["port"]),
         username: data["name"],
-        version: "1.21.1", // Loglarda gördüğümüz tam sürüm
-        hideErrors: true   // Gereksiz konsol kalabalığını gizler
+        version: false,  // Otomatik sürüm algılama (1.20 mi 1.21 mi kendi bulur)
+        hideErrors: true 
     });
 
     console.log(`[BAĞLANTI] Sunucuya giriliyor: ${data["ip"]}:${data["port"]}`);
 
-    // --- 3. TEXTURE PACK KORUMASI ---
+    // --- 3. TEXTURE PACK REDDETME (HAYIR DEME) ---
     bot.on('resource_pack', () => {
-        console.log("[KORUMA] Sunucu paket gönderdi, otomatik kabul edildi.");
-        bot.acceptResourcePack();
+        console.log("[KORUMA] Sunucu paket indirmek istedi, 'HAYIR' denilerek reddedildi.");
+        bot.denyResourcePack(); // İndirmeyi reddeder
     });
 
-    // --- 4. SÜPER HIZLI AUTHME (Zaman Aşımını Engeller) ---
-    bot.on('spawn', function() {
-        console.log("[OYUN] Bot dünyaya indi! Şifre işlemleri başlıyor...");
+    // --- 4. AKILLI AUTHME SİSTEMİ (Sohbeti Okur) ---
+    bot.on('messagestr', (message) => {
+        let text = message.toLowerCase();
         
-        // Timeout yememek için sadece 1 saniye bekleyip şifreyi yazıyoruz
-        setTimeout(() => {
+        // Sunucu "register" kelimesi geçen bir mesaj atarsa
+        if (text.includes('/register')) {
+            console.log("[AUTHME] Kayıt isteği okundu, şifre yazılıyor...");
             bot.chat(`/register ${secretPassword} ${secretPassword}`);
-            
-            // Register ve Login çakışmasın diye araya yarım saniye (500ms) koyduk
-            setTimeout(() => {
-                bot.chat(`/login ${secretPassword}`);
-                console.log("[AUTHME] Giriş komutları başarıyla gönderildi!");
-            }, 500);
-            
-        }, 1000); 
+        }
+        
+        // Sunucu "login" kelimesi geçen bir mesaj atarsa
+        if (text.includes('/login')) {
+            console.log("[AUTHME] Giriş isteği okundu, şifre yazılıyor...");
+            bot.chat(`/login ${secretPassword}`);
+        }
     });
 
-    // --- 5. ÖLÜM KORUMASI (Şimşek veya mob öldürürse) ---
+    // --- 5. ÖLÜM KORUMASI ---
     bot.on('death', () => {
         console.log("[UYARI] Bot öldü! Yeniden doğuyor...");
         bot.chat('/respawn');
     });
 
-    // --- 6. KUSURSUZ İNSAN TAKLİDİ VE ANTİ-AFK ---
+    // --- 6. İNSAN TAKLİDİ (Anti-AFK) ---
     bot.on('time', () => {
-        // Sunucu zamanına göre düzenli ama rastgele hareketler
-        if (bot.time.age % 100 === 0) {
+        if (bot.time.age % 150 === 0) {
             bot.setControlState('jump', true);
             setTimeout(() => bot.setControlState('jump', false), 500);
-            
-            // Kafasını rastgele yönlere çevirir
-            const yaw = Math.random() * Math.PI * 2;
-            const pitch = (Math.random() - 0.5) * Math.PI;
-            bot.look(yaw, pitch, false);
         }
     });
 
-    // --- 7. HATA VE ATILMA YÖNETİMİ ---
+    // --- 7. BAĞLANTI KONTROLÜ VE HATA YÖNETİMİ ---
     bot.on('kicked', reason => {
-        console.log("\n[HATA - SUNUCUDAN ATILDI]");
-        console.log("Sebep: " + reason);
-        console.log("--------------------------\n");
+        console.log("\n[SUNUCUDAN ATILDI] Sebep: " + reason);
     });
 
     bot.on('error', err => {
         console.log("[SİSTEM HATASI] " + err.message);
     });
 
-    // Bağlantı koparsa veya sunucu kapanırsa asla pes etmez, tekrar dener
     bot.on('end', () => {
-        console.log("[BAĞLANTI KOPTU] 15 saniye sonra sunucuya tekrar bağlanılacak...");
-        setTimeout(createPerfectBot, 15000); // 15 saniye bekleme
+        console.log("[BAĞLANTI KOPTU] 15 saniye sonra tekrar denenecek...");
+        setTimeout(createPerfectBot, 15000);
     });
 }
 
