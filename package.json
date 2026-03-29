@@ -1,12 +1,12 @@
 {
-  "name": "afkbot",
+  "name": "pcdyfynw-bot",
   "version": "1.0.0",
-  "description": "Aternos AFK Bot",
+  "description": "PcdyfyNetwork AFK Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "krushna06",
+  "author": "PcdyfyNetwork",
   "license": "ISC",
   "dependencies": {
     "mineflayer": "^4.20.0",
