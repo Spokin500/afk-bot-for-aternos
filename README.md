@@ -29,7 +29,9 @@ Aternos Minecraft sunucularında AFK kalan, Render'a (web service) uyumlu bir bo
    - **Start Command:** `npm start`
 4. Deploy edin. Bot, Render tarafından verilen `PORT` değişkenini kullanır (web sayfası otomatik yayınlanır).
 
-> **Önemli:** Servisi **Frankfurt** bölgesinde oluşturun. Aternos sunucuları Almanya'da barındırılır; Oregon (ABD) gibi uzak bölgelerden TCP bağlantısı Aternos host'u tarafından engellenir (`connect ETIMEDOUT`). Render bölgeyi sonradan değiştirmez — yanlış bölgedeyse servisi silip Frankfurt'ta yeniden oluşturun.
+> **Önemli:** Servisi **Frankfurt** bölgesinde oluşturun. Aternos sunucuları Almanya'da barındırılır; uzak bölgelerden TCP bağlantısı engellenebilir (`connect ETIMEDOUT`). Render bölgeyi sonradan değiştirmez — yanlış bölgedeyse servisi silip Frankfurt'ta yeniden oluşturun.
+
+> **Aternos bot koruması:** Aternos, datacenter IP'lerini ve bot bağlantılarını engelleyebilir (SYN paketleri sessizce düşürülür → `connect ETIMEDOUT`). Bot bir kez girdiyse sonra engelliyse, Render servisini **silip yeniden oluşturun** (taze IP alırsınız). Bot artık 30 saniyeden başlayıp en fazla 5 dakikaya kadar üstel geri çekilmeyle yeniden dener — engel süresi dolduğunda tekrar girebilir, ancak sürekli denemeyle engeli uzatmaz.
 
 ## Kapanmaması İçin (Keep Alive)
 

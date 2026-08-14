@@ -30,6 +30,16 @@ var pi = 3.14159
 var moveinterval = 2
 var maxrandom = 5
 
+var retryDelay = 30000
+const MAX_RETRY_DELAY = 300000
+
+function scheduleReconnect() {
+  setTimeout(createBot, retryDelay)
+  status.lastEvent = 'Yeniden bağlanma: ' + Math.round(retryDelay / 1000) + ' sn sonra'
+  console.log('Reconnecting in ' + Math.round(retryDelay / 1000) + 's')
+  retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY)
+}
+
 function createBot() {
   var lasttime = -1
   var moving = 0
@@ -82,6 +92,7 @@ function createBot() {
     status.lastError = null
     status.lastKick = null
     status.lastEvent = 'Sunucuda, AFK olarak çalışıyor'
+    retryDelay = 30000
     console.log('Spawned on server, bot is now AFK')
   })
 
@@ -101,9 +112,9 @@ function createBot() {
 
   bot.on('end', function () {
     status.online = false
-    status.lastEvent = 'Bağlantı kesildi, 15 saniye sonra yeniden bağlanılıyor...'
-    console.log('Disconnected. Reconnecting in 15 seconds...')
-    setTimeout(createBot, 15000)
+    status.lastEvent = 'Bağlantı kesildi, yeniden bağlanılıyor...'
+    console.log('Disconnected. Reconnecting...')
+    scheduleReconnect()
   })
 }
 
