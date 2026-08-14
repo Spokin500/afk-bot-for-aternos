@@ -33,6 +33,20 @@ Aternos Minecraft sunucularında AFK kalan, Render'a (web service) uyumlu bir bo
 
 > **Aternos bot koruması:** Aternos, datacenter IP'lerini ve bot bağlantılarını engelleyebilir (SYN paketleri sessizce düşürülür → `connect ETIMEDOUT`). Bot bir kez girdiyse sonra engelliyse, Render servisini **silip yeniden oluşturun** (taze IP alırsınız). Bot artık 30 saniyeden başlayıp en fazla 5 dakikaya kadar üstel geri çekilmeyle yeniden dener — engel süresi dolduğunda tekrar girebilir, ancak sürekli denemeyle engeli uzatmaz.
 
+## Render çalışmıyorsa (Aternos IP engeli)
+
+Aternos, AWS/Render'ın datacenter IP'lerini SYN seviyesinde engelleyebilir — bot bağlanamaz (`connect ETIMEDOUT`), coğrafyadan bağımsız (Oregon ve Frankfurt da engelli). Kodla çözülmez; farklı IP altyapısına sahip bir host deneyin.
+
+### Railway (önerilen)
+1. [railway.app](https://railway.app) hesabı açın (başlangıç kredisi verir).
+2. **New Project > Deploy from GitHub repo** → `Spokin500/afk-bot-for-aternos`'u seçin. Hazır `railway.json` kullanılır.
+3. Deploy olunca verilen `*.up.railway.app` URL'sinin `/status` ucunu kontrol edin.
+
+### Fly.io
+1. [fly.io](https://fly.io) hesabı açın, `flyctl` CLI kurun, `fly auth login`.
+2. `fly launch` → mevcut `fly.toml` ve `Dockerfile` kullanılır.
+3. `fly deploy` ve `fly open`. `/status` ile kontrol edin.
+
 ## Kapanmaması İçin (Keep Alive)
 
 Render'ın ücretsiz planı, 15 dakika istek gelmezse servisi uyutur. Kapanmaması için bir monitor (ör. [UptimeRobot](https://uptimerobot.com)) ile sitenize her 5 dakikada bir ping atın. Böylece servis sürekli ayakta kalır.
