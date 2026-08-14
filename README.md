@@ -23,11 +23,13 @@ Aternos Minecraft sunucularında AFK kalan, Render'a (web service) uyumlu bir bo
 
 1. Bu repoyu GitHub'a yükleyin (örn. `afk-bot`).
 2. [render.com](https://render.com) hesabınıza girin.
-3. **New > Blueprint** seçip GitHub reponuzu bağlayın — hazır olan `render.yaml` ile servis otomatik kurulur. Ya da **New > Web Service** seçip:
+3. **New > Blueprint** seçip GitHub reponuzu bağlayın — hazır olan `render.yaml` ile servis otomatik kurulur (Frankfurt bölgesinde). Ya da **New > Web Service** seçip:
    - **Runtime:** Node
    - **Build Command:** `npm install`
    - **Start Command:** `npm start`
 4. Deploy edin. Bot, Render tarafından verilen `PORT` değişkenini kullanır (web sayfası otomatik yayınlanır).
+
+> **Önemli:** Servisi **Frankfurt** bölgesinde oluşturun. Aternos sunucuları Almanya'da barındırılır; Oregon (ABD) gibi uzak bölgelerden TCP bağlantısı Aternos host'u tarafından engellenir (`connect ETIMEDOUT`). Render bölgeyi sonradan değiştirmez — yanlış bölgedeyse servisi silip Frankfurt'ta yeniden oluşturun.
 
 ## Kapanmaması İçin (Keep Alive)
 
